@@ -108,7 +108,7 @@ export function MaxxDiffusionDemo() {
     </div>
     <div className="maxx-console" aria-label="MAXX chat demonstration">
       <div className="maxx-console-head">
-        <div className="maxx-avatar"><span>M</span><i/></div>
+        <div className="maxx-avatar"><span>M</span><img src="https://raw.githubusercontent.com/executiveusa/macs-agent-portal/88d0a5d0595fd40a7dc60712fef2a7bc0c10e294/public/maxx/maxx-avatar.webp" alt="Agent MAXX character" loading="lazy" onError={e => {e.currentTarget.style.display = "none";}}/><i/></div>
         <div><strong>MAXX</strong><small>Digital Employee / Preview</small></div>
         <div className="maxx-model"><Sparkles size={13}/><span>{guided ? 'Scripted guide' : 'Mercury 3'}</span></div>
       </div>
@@ -131,7 +131,7 @@ export function MaxxDiffusionDemo() {
         <input id="maxx-input" value={input} onChange={e => setInput(e.target.value)} maxLength={900} placeholder="What could MAXX do for your business?" disabled={locked}/>
         {locked ? <button type="button" onClick={cancel} aria-label="Stop generating"><Square size={17}/></button> : <button type="submit" disabled={!input.trim()} aria-label="Send question"><Send size={17}/></button>}
       </form>
-      <div className="maxx-console-foot"><span><CheckCircle2 size={14}/> Final answers only. Provisional text cannot execute actions.</span><a href="https://www.macsdigitalmedia.com/apply" target="_blank" rel="noopener noreferrer">Plan your first task <ArrowRight size={14}/></a></div>
+      <div className="maxx-console-foot"><span><CheckCircle2 size={14}/> Final answers only. Provisional text cannot execute actions.</span><a href="https://macsdigitalmedia.vercel.app/apply" target="_blank" rel="noopener noreferrer">Plan your first task <ArrowRight size={14}/></a></div>
     </div>
   </section>;
 }
