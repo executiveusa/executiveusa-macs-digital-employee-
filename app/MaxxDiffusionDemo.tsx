@@ -14,6 +14,7 @@ const PROMPTS = [
   { eyebrow: '05 / REVENUE', label: 'Spot deals going cold', prompt: 'Explain how a digital employee could flag leads that have gone quiet, prioritize follow-ups, and measure whether the workflow recovered real sales.' },
   { eyebrow: '06 / FIRST STEP', label: 'Find my first automation', prompt: 'Interview me to identify the single repetitive task in my business that is easiest to prove and most likely to save time or recover revenue.' },
 ];
+const GUIDES = ["Start by listing inquiries from channels you already control. Group them by date, urgency, and whether they received a reply. MAXX could draft a personal follow-up for each unanswered inquiry. You review every message before sending. Proof: compare replies and booked jobs against the original unanswered list.","Begin with a daily summary: new inquiries, unanswered messages, today's bookings, and three priority decisions. MAXX could prepare the summary after the inbox and calendar are connected. You retain control over replies, scheduling changes, payments, and sensitive decisions.","MAXX could ask customers for the service, preferred date, location, and best contact method. Once your real calendar is connected and tested, it could suggest available times. It would not confirm an appointment until your rules and approval are satisfied. Proof: test a real booking and calendar readback.","Give MAXX the job photos and a short description. It could draft one useful case-study post, three customer tips, and two short captions. You verify the facts, images, permissions, and brand voice. Publish only after your approval. Proof: approved posts and their real publication receipts.","First, define a lead as 'cold' using a measurable rule, such as no response for seven days. With an authorized CRM connection MAXX could rank those deals, prepare follow-up drafts, and report outcomes. Avoid treating a draft as a sale. Proof: replies, appointments, and attributed paid jobs.","Let's identify one repetitive job. What type of business do you run, how many inquiries do you receive weekly, and which routine takes the most time? A useful first automation should be low-risk, measurable, reversible, and capable of recovering revenue or saving time within 30 days."];
 const START = 'I’m MAXX. Pick a task below to see how a digital employee could help your business. This is a public demonstration, not a connection to your private data.';
 export function MaxxDiffusionDemo() {
   const [messages, setMessages] = useState<Msg[]>([{ role: 'assistant', content: START }]);
@@ -22,16 +23,22 @@ export function MaxxDiffusionDemo() {
   const [snapshots, setSnapshots] = useState(0);
   const [error, setError] = useState('');
   const [draft, setDraft] = useState('');
+  const [guided, setGuided] = useState(false);
   const abort = useRef<AbortController | null>(null);
   const bottom = useRef<HTMLDivElement | null>(null);
   const locked = phase === 'connecting' || phase === 'refining';
   useEffect(() => { bottom.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, [messages, draft, phase]);
   useEffect(() => () => abort.current?.abort(), []);
 
+  function showGuided(i: number) {
+    if (locked) return;
+    setError(''); setDraft(''); setSnapshots(0); setPhase('ready'); setGuided(true);
+    setMessages(prev => [...prev, {role:'user',content:PROMPTS[i].prompt}, {role:'assistant',content:'GUIDED EXAMPLE — NOT LIVE AI\\n\\n' + GUIDES[i]}]);
+  }
   async function send(value: string) {
     const question = value.trim().slice(0, 900);
     if (!question || locked) return;
-    setInput(''); setError(''); setDraft(''); setSnapshots(0); setPhase('connecting');
+    setInput(''); setError(''); setDraft(''); setSnapshots(0); setPhase('connecting'); setGuided(false);
     const history = messages.filter((m) => m.content !== START).slice(-6);
     const next: Msg[] = [...history, { role: 'user', content: question }];
     setMessages(prev => [...prev, { role: 'user', content: question }]);
@@ -48,7 +55,7 @@ export function MaxxDiffusionDemo() {
         const info = await response.json().catch(() => ({}));
         if (response.status === 503 && info.error === 'live_unavailable') {
           setPhase('offline');
-          setError('Live Mercury diffusion is not connected on this deployment. No simulated answer has been substituted.');
+          setError('Live Mercury is not connected. Use the guided example buttons for realistic sample workflows, or request a consultation. No generated answer was fabricated.');
         } else throw new Error('The model is unavailable at the moment. No action was taken.');
         return;
       }
@@ -91,10 +98,10 @@ export function MaxxDiffusionDemo() {
     <div className="maxx-intro">
       <div className="eyebrow"><span>02 /</span> MEET YOUR DIGITAL EMPLOYEE</div>
       <h2 id="maxx-heading">Meet MAXX.<br/><span className="highlight">Give it a job.</span></h2>
-      <p>Don't start with a dashboard. Start with the problem. Pick a real-life situation and see how MAXX would approach it in plain English.</p>
-      <div className="maxx-truth"><ShieldCheck size={18}/><span>Demonstration only. No business data is connected. No messages are sent or tasks executed.</span></div>
+      <p>Don't start with a dashboard. Start with the problem. Pick a business challenge to explore a clearly labeled guided example, or type your own question for the live Mercury service when connected.</p>
+      <div className="maxx-truth"><ShieldCheck size={18}/><span>Guided examples are authored scripts, not generated AI. No business data is connected, and no messages or tasks are executed.</span></div>
       <div className="maxx-prompt-grid" aria-label="Example tasks for MAXX">
-        {PROMPTS.map((item) => <button key={item.eyebrow} type="button" disabled={locked} onClick={() => void send(item.prompt)} className="maxx-prompt">
+        {PROMPTS.map((item) => <button key={item.eyebrow} type="button" disabled={locked} onClick={() => showGuided(PROMPTS.indexOf(item))} className="maxx-prompt">
           <small>{item.eyebrow}</small><strong>{item.label}</strong><ArrowUpRight size={19} aria-hidden="true"/>
         </button>)}
       </div>
@@ -103,7 +110,7 @@ export function MaxxDiffusionDemo() {
       <div className="maxx-console-head">
         <div className="maxx-avatar"><span>M</span><i/></div>
         <div><strong>MAXX</strong><small>Digital Employee / Preview</small></div>
-        <div className="maxx-model"><Sparkles size={13}/><span>Mercury 3</span></div>
+        <div className="maxx-model"><Sparkles size={13}/><span>{guided ? 'Scripted guide' : 'Mercury 3'}</span></div>
       </div>
       <div className="maxx-messages" role="log" aria-label="Conversation with MAXX">
         {messages.map((m, i) => <div className={'maxx-bubble ' + (m.role === 'user' ? 'maxx-user' : 'maxx-assistant')} key={i}>
