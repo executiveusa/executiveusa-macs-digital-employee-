@@ -19,7 +19,7 @@ function cleanMessages(value: unknown): Msg[] | null {
   return messages;
 }
 export async function POST(request: NextRequest) {
-  if (!process.env.INCEPTION_API_KEY) {
+  if (!process.env.INCEPTION_API_KEY || process.env.MAXX_PUBLIC_DEMO_ENABLED !== 'true') {
     return Response.json({ error: 'live_unavailable', detail: 'Live Mercury diffusion is not connected yet. No simulated answer was generated.' }, { status: 503 });
   }
   const size = Number(request.headers.get('content-length') || 0);
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       headers: { 'content-type': 'application/json', authorization: 'Bearer ' + process.env.INCEPTION_API_KEY },
       body: JSON.stringify({
         model: 'mercury-3', messages: [{ role: 'system', content: SYSTEM }, ...messages],
-        stream: true, diffusing: true, max_completion_tokens: 480, reasoning_effort: 'instant',
+        stream: true, diffusing: true, max_completion_tokens: 1536, reasoning_effort: 'instant',
       }),
       signal: AbortSignal.timeout(24000),
       cache: 'no-store',
@@ -99,5 +99,5 @@ export async function POST(request: NextRequest) {
     },
     async cancel() { try { await upstreamReader?.cancel(); } catch { /* ignored */ } },
   });
-  return new Response(stream, { headers: { 'content-type': 'text/event-stream; charset=utf-8', 'cache-control': 'no-cache, no-transform', 'x-content-type-options': 'nosniff' } });
+  return new Response(stream, { headers: { 'content-type': 'text/event-stream; charset=utf-8', 'cache-control': 'no-cache, no-transform', 'x-content-type-options': 'nosniff', 'x-accel-buffering': 'no' } });
 }
