@@ -18,6 +18,10 @@ function cleanMessages(value: unknown): Msg[] | null {
   if (messages.at(-1)?.role !== 'user') return null;
   return messages;
 }
+export async function GET() {
+  return Response.json({ enabled: Boolean(process.env.INCEPTION_API_KEY && process.env.MAXX_PUBLIC_DEMO_ENABLED === 'true'), mode: 'mercury-diffusion' }, { headers: { 'cache-control': 'no-store' } });
+}
+
 export async function POST(request: NextRequest) {
   if (!process.env.INCEPTION_API_KEY || process.env.MAXX_PUBLIC_DEMO_ENABLED !== 'true') {
     return Response.json({ error: 'live_unavailable', detail: 'Live Mercury diffusion is not connected yet. No simulated answer was generated.' }, { status: 503 });
