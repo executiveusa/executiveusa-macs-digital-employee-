@@ -15,7 +15,7 @@ const PROMPTS = [
   { eyebrow: '06 / FIRST STEP', label: 'Find my first automation', prompt: 'Interview me to identify the single repetitive task in my business that is easiest to prove and most likely to save time or recover revenue.' },
 ];
 const GUIDES = ["Start by listing inquiries from channels you already control. Group them by date, urgency, and whether they received a reply. MAXX could draft a personal follow-up for each unanswered inquiry. You review every message before sending. Proof: compare replies and booked jobs against the original unanswered list.","Begin with a daily summary: new inquiries, unanswered messages, today's bookings, and three priority decisions. MAXX could prepare the summary after the inbox and calendar are connected. You retain control over replies, scheduling changes, payments, and sensitive decisions.","MAXX could ask customers for the service, preferred date, location, and best contact method. Once your real calendar is connected and tested, it could suggest available times. It would not confirm an appointment until your rules and approval are satisfied. Proof: test a real booking and calendar readback.","Give MAXX the job photos and a short description. It could draft one useful case-study post, three customer tips, and two short captions. You verify the facts, images, permissions, and brand voice. Publish only after your approval. Proof: approved posts and their real publication receipts.","First, define a lead as 'cold' using a measurable rule, such as no response for seven days. With an authorized CRM connection MAXX could rank those deals, prepare follow-up drafts, and report outcomes. Avoid treating a draft as a sale. Proof: replies, appointments, and attributed paid jobs.","Let's identify one repetitive job. What type of business do you run, how many inquiries do you receive weekly, and which routine takes the most time? A useful first automation should be low-risk, measurable, reversible, and capable of recovering revenue or saving time within 30 days."];
-const START = 'I’m MAXX. Pick a task below to see how a digital employee could help your business. This is a public demonstration, not a connection to your private data.';
+const START = 'I’m MAXX. Pick a task below to explore six guided workflows. Live Mercury diffusion is available only after the owner's API and security gates are verified.';
 export function MaxxDiffusionDemo() {
   const [messages, setMessages] = useState<Msg[]>([{ role: 'assistant', content: START }]);
   const [input, setInput] = useState('');
@@ -24,11 +24,20 @@ export function MaxxDiffusionDemo() {
   const [error, setError] = useState('');
   const [draft, setDraft] = useState('');
   const [guided, setGuided] = useState(false);
+  const [liveEnabled, setLiveEnabled] = useState(false);
   const abort = useRef<AbortController | null>(null);
   const bottom = useRef<HTMLDivElement | null>(null);
   const locked = phase === 'connecting' || phase === 'refining';
   useEffect(() => { bottom.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, [messages, draft, phase]);
   useEffect(() => () => abort.current?.abort(), []);
+  useEffect(() => {
+    let mounted = true;
+    fetch('/api/maxx/demo', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : {enabled:false})
+      .then(data => { if (mounted) setLiveEnabled(data.enabled === true); })
+      .catch(() => { if (mounted) setLiveEnabled(false); });
+    return () => { mounted = false; };
+  }, []);
 
   function showGuided(i: number) {
     if (locked) return;
@@ -37,7 +46,7 @@ export function MaxxDiffusionDemo() {
   }
   async function send(value: string) {
     const question = value.trim().slice(0, 900);
-    if (!question || locked) return;
+    if (!question || locked || !liveEnabled) return;
     setInput(''); setError(''); setDraft(''); setSnapshots(0); setPhase('connecting'); setGuided(false);
     const history = messages.filter((m) => m.content !== START).slice(-6);
     const next: Msg[] = [...history, { role: 'user', content: question }];
@@ -110,7 +119,7 @@ export function MaxxDiffusionDemo() {
       <div className="maxx-console-head">
         <div className="maxx-avatar"><span>M</span><img src="https://raw.githubusercontent.com/executiveusa/macs-agent-portal/88d0a5d0595fd40a7dc60712fef2a7bc0c10e294/public/maxx/maxx-avatar.webp" alt="Agent MAXX character" loading="lazy" onError={e => {e.currentTarget.style.display = "none";}}/><i/></div>
         <div><strong>MAXX</strong><small>Digital Employee / Preview</small></div>
-        <div className="maxx-model"><Sparkles size={13}/><span>{guided ? 'Scripted guide' : 'Mercury 3'}</span></div>
+        <div className="maxx-model"><Sparkles size={13}/><span>{guided ? 'Guided example' : liveEnabled ? 'Mercury 3 live' : 'Live AI offline'}</span></div>
       </div>
       <div className="maxx-messages" role="log" aria-label="Conversation with MAXX">
         {messages.map((m, i) => <div className={'maxx-bubble ' + (m.role === 'user' ? 'maxx-user' : 'maxx-assistant')} key={i}>
@@ -128,8 +137,8 @@ export function MaxxDiffusionDemo() {
       </div>
       <form onSubmit={submit} className="maxx-compose">
         <label htmlFor="maxx-input" className="maxx-sr-only">Ask MAXX a question</label>
-        <input id="maxx-input" value={input} onChange={e => setInput(e.target.value)} maxLength={900} placeholder="What could MAXX do for your business?" disabled={locked}/>
-        {locked ? <button type="button" onClick={cancel} aria-label="Stop generating"><Square size={17}/></button> : <button type="submit" disabled={!input.trim()} aria-label="Send question"><Send size={17}/></button>}
+        <input id="maxx-input" value={input} onChange={e => setInput(e.target.value)} maxLength={900} placeholder={liveEnabled ? 'What could MAXX do for your business?' : 'Choose a guided example above — live AI not enabled'} disabled={locked || !liveEnabled}/>
+        {locked ? <button type="button" onClick={cancel} aria-label="Stop generating"><Square size={17}/></button> : <button type="submit" disabled={!input.trim() || !liveEnabled} aria-label="Send question"><Send size={17}/></button>}
       </form>
       <div className="maxx-console-foot"><span><CheckCircle2 size={14}/> Final answers only. Provisional text cannot execute actions.</span><a href="https://macsdigitalmedia.vercel.app/apply" target="_blank" rel="noopener noreferrer">Plan your first task <ArrowRight size={14}/></a></div>
     </div>
