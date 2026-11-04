@@ -19,11 +19,11 @@ function cleanMessages(value: unknown): Msg[] | null {
   return messages;
 }
 export async function GET() {
-  return Response.json({ enabled: Boolean(process.env.INCEPTION_API_KEY && process.env.MAXX_PUBLIC_DEMO_ENABLED === 'true'), mode: 'mercury-diffusion' }, { headers: { 'cache-control': 'no-store' } });
+  return Response.json({ enabled: Boolean(process.env.INCEPTION_API_KEY && process.env.MAXX_PUBLIC_DEMO_ENABLED === 'true' && process.env.MAXX_RATE_LIMIT_VERIFIED === 'true' && process.env.MAXX_BUDGET_CAP_VERIFIED === 'true'), mode: 'mercury-diffusion' }, { headers: { 'cache-control': 'no-store' } });
 }
 
 export async function POST(request: NextRequest) {
-  if (!process.env.INCEPTION_API_KEY || process.env.MAXX_PUBLIC_DEMO_ENABLED !== 'true') {
+  if (!process.env.INCEPTION_API_KEY || process.env.MAXX_PUBLIC_DEMO_ENABLED !== 'true' || process.env.MAXX_RATE_LIMIT_VERIFIED !== 'true' || process.env.MAXX_BUDGET_CAP_VERIFIED !== 'true') {
     return Response.json({ error: 'live_unavailable', detail: 'Live Mercury diffusion is not connected yet. No simulated answer was generated.' }, { status: 503 });
   }
   const size = Number(request.headers.get('content-length') || 0);
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
   const messages = cleanMessages((input as { messages?: unknown } | null)?.messages);
   if (!messages) return Response.json({ error: 'invalid_messages' }, { status: 400 });
 
-  // Public proof-of-concept guardrails: server-side key, bounded input/output, no tools,
+  // Public calls remain disabled until external WAF/IP rate limiting and the provider spend cap are independently verified.\n  // Public proof-of-concept guardrails: server-side key, bounded input/output, no tools,
   // and no automatic retry or fake fallback. Configure provider-side spending and rate limits.
   let upstream: Response;
   try {
